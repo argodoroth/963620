@@ -33,7 +33,7 @@
     Area("W06000023");
 */
 Area::Area(const std::string& localAuthorityCode): authorityCode(localAuthorityCode) {
-  throw std::logic_error("Area::Area() has not been implemented!");
+  //throw std::logic_error("Area::Area() has not been implemented!");
 }
 
 /*
@@ -78,7 +78,15 @@ const std::string Area::getLocalAuthorityCode() const{
     ...
     auto name = area.getName(langCode);
 */
+const std::string Area::getName(std::string lang) const{
+	auto it = this->names.find(lang);
 
+	if (it != this->names.end()){
+		return it->second;
+	} else {
+		throw std::out_of_range("Could not find name of language");
+	}
+}
 
 /*
   TODO: Area::setName(lang, name)
@@ -105,7 +113,19 @@ const std::string Area::getLocalAuthorityCode() const{
     std::string langValueWelsh = "Powys";
     area.setName(langCodeWelsh, langValueWelsh);
 */
-
+void Area::setName(std::string lang, std::string name){
+	if (lang.length() != 3){
+		throw std::invalid_argument("Area::setName: Language code must be three alphabetical letters only");
+	}
+	for (size_t i =0; i<lang.length();i++){
+		if(isdigit(lang[i])){
+			throw std::invalid_argument("Area::setName: Language code must be three alphabetical letters only");
+		} else {
+			lang[i] = tolower(lang[i]);
+		}
+	}
+	names.insert({lang,name});
+}
 
 /*
   TODO: Area::getMeasure(key)
@@ -131,7 +151,18 @@ const std::string Area::getLocalAuthorityCode() const{
     ...
     auto measure2 = area.getMeasure("pop");
 */
+Measure& Area::getMeasure(std::string key){
+	for (size_t i = 0; i<key.length();i++){
+		key[i] = (char) tolower(key[i]);
+	}
+	auto it = this->measures.find(key);
 
+	if (it != this->measures.end()){
+		return it->second;
+	} else {
+		throw std::out_of_range("No measure found matching " + key);
+	}
+}
 
 /*
   TODO: Area::setMeasure(codename, measure)
@@ -165,8 +196,30 @@ const std::string Area::getLocalAuthorityCode() const{
 
     area.setMeasure(codename, measure);
 */
+void Area::setMeasure(std::string key, Measure measure){
+	for (size_t i = 0; i<key.length();i++){
+			key[i] = (char) tolower(key[i]);
+	}
+	auto meas = this->measures.find(key);
+	if (meas==this->measures.end()){
+		this->measures.insert({key,measure});
+	} else {
+		Measure oldMeasure = meas->second;
+		for (auto it2 = measure.getValues().begin(); it2 != measure.getValues().end();it2++){
+			oldMeasure.setValue(it2->first,it2->second);
+		}
+	}
+}
 
+//Returns the full list of measures for the area
+const std::map<std::string,Measure> Area::getMeasures() const{
+	return this->measures;
+}
 
+//Returns full list of names for the area
+const std::map<std::string,std::string> Area::getNames() const{
+	return this->names;
+}
 /*
   TODO: Area::size()
 
@@ -190,7 +243,14 @@ const std::string Area::getLocalAuthorityCode() const{
     area.setMeasure(code, measure);
     auto size = area.size();
 */
+const int Area::size() const noexcept {
+	return this->measures.size();
+}
 
+//Will return the amount of names the area has
+const int Area::namesSize() const noexcept{
+	return this->names.size();
+}
 
 /*
   TODO: operator<<(os, area)
@@ -248,3 +308,22 @@ const std::string Area::getLocalAuthorityCode() const{
 
     bool eq = area1 == area2;
 */
+bool operator==(Area lhs, Area rhs){
+	if (lhs.getLocalAuthorityCode() != rhs.getLocalAuthorityCode()){
+		return false;
+	}
+	if (lhs.namesSize() != rhs.namesSize() || lhs.size() != rhs.size()){
+		return false;
+	}
+	for (auto it = lhs.getMeasures().begin(); it != lhs.getMeasures().end();it++){
+		if (!(rhs.getMeasure(it->first) == it->second)){
+			return false;
+		}
+	}
+	for (auto it = lhs.getNames().begin(); it != lhs.getNames().end();it++){
+			if (rhs.getName(it->first) != it->second){
+				return false;
+			}
+	}
+	return true;
+}

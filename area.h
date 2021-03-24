@@ -17,6 +17,7 @@
  */
 
 #include <string>
+#include <map>
 
 #include "measure.h"
 
@@ -32,9 +33,20 @@
 class Area {
 private:
   const std::string authorityCode;
+  std::map<std::string,std::string> names;
+  std::map<std::string,Measure> measures;
 public:
   Area(const std::string& localAuthorityCode);
   const std::string getLocalAuthorityCode() const;
+  const std::string getName(std::string lang) const;
+  void setName(std::string lang, std::string name);
+  Measure& getMeasure(std::string key);
+  void setMeasure(std::string key, Measure measure);
+  const std::map<std::string,Measure> getMeasures() const;
+  const std::map<std::string,std::string> getNames() const;
+  const int size() const noexcept;
+  const int namesSize() const noexcept;
 };
+bool operator==(Area lhs, Area rhs);
 
 #endif // AREA_H_

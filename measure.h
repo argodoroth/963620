@@ -15,6 +15,7 @@
  */
 
 #include <string>
+#include <map>
 
 /*
   The Measure class contains a measure code, label, and a container for readings
@@ -25,7 +26,23 @@
   to overload.
 */
 class Measure {
-  Measure(std::string code, const std::string &label);
+private:
+	std::string label;
+	std::string codename;
+	std::map<int,double> values;
+public:
+	Measure(std::string code, const std::string &label);
+	const std::string getCodename() const noexcept;
+	const std::string getLabel() const noexcept;
+	void setLabel(std::string label);
+	const double getValue(int key) const;
+	const std::map<int,double> getValues() const;
+	void setValue(int key, double value);
+	const int size() const noexcept;
+	const double getDifference() const noexcept;
+	const double getDifferenceAsPercentage() const noexcept;
+	const double getAverage() const noexcept;
 };
 
+bool operator==(Measure lhs, Measure rhs);
 #endif // MEASURE_H_

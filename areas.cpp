@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <unordered_set>
+#include <map>
 
 #include "lib_json.hpp"
 
@@ -45,7 +46,7 @@ using json = nlohmann::json;
     Areas data = Areas();
 */
 Areas::Areas() {
-  throw std::logic_error("Areas::Areas() has not been implemented!");
+  //throw std::logic_error("Areas::Areas() has not been implemented!");
 }
 
 /*
@@ -74,7 +75,18 @@ Areas::Areas() {
     data.setArea(localAuthorityCode, area);
 */
 
+void Areas::setArea(std::string localAuthorityCode, Area area){
 
+	auto ar = areas.find(localAuthorityCode);
+	if (ar==areas.end()){
+		areas.insert({localAuthorityCode,area});
+	} else {
+		Area oldArea = ar->second;
+		for (auto it = area.getMeasures().begin(); it != area.getMeasures().end();it++){
+			oldArea.setMeasure(it->first,it->second);
+		}
+	}
+}
 /*
   TODO: Areas::getArea(localAuthorityCode)
 
@@ -98,7 +110,14 @@ Areas::Areas() {
     ...
     Area area2 = areas.getArea("W06000023");
 */
-
+Area& Areas::getArea(std::string code) {
+	auto ar = this->areas.find(code);
+	if (ar != this->areas.end()){
+		return ar->second;
+	} else {
+		throw std::out_of_range("This area isnt here " + code);
+	}
+}
 
 /*
   TODO: Areas::size()
@@ -118,12 +137,14 @@ Areas::Areas() {
     
     auto size = areas.size(); // returns 1
 */
-
+const int Areas::size() const noexcept{
+	return this->areas.size();
+}
 
 /*
   TODO: Areas::populateFromAuthorityCodeCSV(is, cols, areasFilter)
 
-  This function specifically parses the compiled areas.csv file of local 
+  This function specifically parses the compiled areas.csv file of local
   authority codes, and their names in English and Welsh.
 
   This is a simple dataset that is a comma-separated values file (CSV), where
@@ -296,7 +317,7 @@ void Areas::populateFromAuthorityCodeCSV(
   Each row contains an authority code and values for each year (or no value
   if the data doesn't exist).
 
-  Note that these files do not include the names for areas, instead you 
+  Note that these files do not include the names for areas, instead you
   have to rely on the names already populated through 
   Areas::populateFromAuthorityCodeCSV();
 

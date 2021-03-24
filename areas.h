@@ -30,6 +30,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_set>
+#include <map>
 
 #include "datasets.h"
 #include "area.h"
@@ -51,8 +52,7 @@ using YearFilterTuple = std::tuple<unsigned int, unsigned int>;
   TODO: you should remove the declaration of the Null class below, and set
   AreasContainer to a valid Standard Library container of your choosing.
 */
-class Null { };
-using AreasContainer = Null;
+using AreasContainer = std::map<std::string,Area>;
 
 /*
   Areas is a class that stores all the data categorised by area. The 
@@ -69,6 +69,8 @@ using AreasContainer = Null;
   to overload.
 */
 class Areas {
+private:
+	AreasContainer areas;
 public:
   Areas();
   
@@ -93,6 +95,10 @@ public:
       noexcept(false);
 
   std::string toJSON() const;
+
+  void setArea(std::string localAuthorityCode, Area area);
+  Area& getArea(std::string localAuthorityCode);
+  const int size() const noexcept;
 };
 
 #endif // AREAS_H
