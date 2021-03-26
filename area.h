@@ -42,7 +42,7 @@ public:
   void setName(std::string lang, std::string name);
   Measure& getMeasure(std::string key);
   void setMeasure(std::string key, Measure measure);
-  const std::map<std::string,Measure> getMeasures() const;
+  std::map<std::string,Measure> getMeasures() const;
   const std::map<std::string,std::string> getNames() const;
   const int size() const noexcept;
   const int namesSize() const noexcept;

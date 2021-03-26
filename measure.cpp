@@ -20,6 +20,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <iostream>
 
 #include "measure.h"
 
@@ -43,8 +44,8 @@
     Measure measure(codename, label);
 */
 Measure::Measure(std::string codename, const std::string &label) {
-	for (size_t i; i<codename.length();i++){
-		codename[i] = tolower(codename[i]);
+	for (size_t i = 0; i<codename.length();i++){
+		codename[i] = (char) tolower(codename[i]);
 	}
 	this->codename = codename;
 	this->label = label;
@@ -149,7 +150,7 @@ const double Measure::getValue(int key) const {
 	if (it != this->values.end()){
 		return it->second;
 	} else {
-		throw std::out_of_range("No value found for year " + key);
+		throw std::out_of_range("No value found for year " + std::to_string(key));
 	}
 }
 
@@ -180,10 +181,10 @@ const std::map<int,double> Measure::getValues() const {
     measure.setValue(1999, 12345678.9);
 */
 void Measure::setValue(int key, double value){
-	auto it = this->values.find(key);
-	if (it != this->values.end()){
-		this->values.erase(it);
-	}
+//	auto it = this->values.find(key);
+//	if (it != this->values.end()){
+//		this->values.erase(it);
+//	}
 	this->values.insert({key,value});
 }
 
@@ -207,7 +208,7 @@ void Measure::setValue(int key, double value){
 */
 
 const int Measure::size() const noexcept{
-	return this->values.size();
+	return values.size();
 }
 /*
   TODO: Measure::getDifference()

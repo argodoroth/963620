@@ -25,7 +25,7 @@ SCENARIO( "a source file can be opened and read", "[InputFile][existent]" ) {
     return std::ifstream(path).is_open();
   };
 
-  const std::string test_file = "datasets/areas.csv";
+  const std::string test_file = "../datasets/areas.csv";
   REQUIRE( file_exists(test_file) );
 
   GIVEN( "a valid file path" ) {

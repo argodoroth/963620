@@ -30,7 +30,7 @@
 #include <string>
 #include <tuple>
 #include <unordered_set>
-#include <map>
+
 
 #include "datasets.h"
 #include "area.h"
@@ -94,9 +94,14 @@ public:
       const YearFilterTuple * const yearsFilter = nullptr)
       noexcept(false);
 
+  void populateFromWelshStatsJSON(std::istream &is,
+		  const BethYw::SourceColumnMapping &cols,
+		  const StringFilterSet * const areasFilter,
+		  const StringFilterSet * const measuresFilter,
+		  const YearFilterTuple * const yearsFilter);
   std::string toJSON() const;
 
-  void setArea(std::string localAuthorityCode, Area area);
+  void setArea(std::string code, Area area);
   Area& getArea(std::string localAuthorityCode);
   const int size() const noexcept;
 };

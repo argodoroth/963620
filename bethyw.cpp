@@ -343,11 +343,14 @@ std::tuple<unsigned int, unsigned int>  BethYw::parseYearsArg(
 
 	auto temp = args["years"].as<std::string>();
 	std::size_t split = temp.find("-");
+
+	//checks values in years to see if digits
 	for (std::size_t i = 0; i<temp.size(); i++){
 		if (!isdigit(temp[i]) && i != split){
 			throw std::invalid_argument("Invalid input for years argument");
 		}
 	}
+
 	//checks to see if there is a hyphen in the values
 	if (split==std::string::npos && temp.size() <= 4){
 		years = std::make_tuple(std::stoi(temp),std::stoi(temp));
@@ -359,10 +362,6 @@ std::tuple<unsigned int, unsigned int>  BethYw::parseYearsArg(
 		throw std::invalid_argument("Invalid input for years argument");
 	}
 
-	//throw std::invalid_argument("Invalid input for years argument");
-
-
-	//years = std::make_tuple(std::stoi(temp[0]),0);
 	return years;
 }
 /*

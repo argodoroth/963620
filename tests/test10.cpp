@@ -154,7 +154,7 @@ SCENARIO( "an Areas instance can contain Area instances", "[Areas][contain]" ) {
         AND_THEN( "the names of the second Area instances will overwrite the first" ) {
 
           Area &newArea = areas.getArea(localAuthorityCode);
-          
+
           REQUIRE( newArea == areaCombined );
 
         } // AND_THEN

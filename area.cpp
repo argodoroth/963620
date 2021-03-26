@@ -18,6 +18,7 @@
 */
 
 #include <stdexcept>
+#include <iostream>
 
 #include "area.h"
 
@@ -121,10 +122,15 @@ void Area::setName(std::string lang, std::string name){
 		if(isdigit(lang[i])){
 			throw std::invalid_argument("Area::setName: Language code must be three alphabetical letters only");
 		} else {
-			lang[i] = tolower(lang[i]);
+			lang[i] = (char) tolower(lang[i]);
 		}
 	}
+	auto it = names.find(lang);
+	if (it != names.end()){
+		names.erase(it);
+	}
 	names.insert({lang,name});
+
 }
 
 /*
@@ -204,15 +210,16 @@ void Area::setMeasure(std::string key, Measure measure){
 	if (meas==this->measures.end()){
 		this->measures.insert({key,measure});
 	} else {
-		Measure oldMeasure = meas->second;
-		for (auto it2 = measure.getValues().begin(); it2 != measure.getValues().end();it2++){
-			oldMeasure.setValue(it2->first,it2->second);
+		Measure& oldMeasure = meas->second;
+		std::map<int,double> vals = measure.getValues();
+		for (auto it = vals.begin(); it != vals.end();it++){
+			oldMeasure.setValue(it->first,it->second);
 		}
 	}
 }
 
 //Returns the full list of measures for the area
-const std::map<std::string,Measure> Area::getMeasures() const{
+std::map<std::string,Measure> Area::getMeasures() const{
 	return this->measures;
 }
 
@@ -312,18 +319,14 @@ bool operator==(Area lhs, Area rhs){
 	if (lhs.getLocalAuthorityCode() != rhs.getLocalAuthorityCode()){
 		return false;
 	}
-	if (lhs.namesSize() != rhs.namesSize() || lhs.size() != rhs.size()){
+	if (lhs.size() != rhs.size()){
 		return false;
 	}
-	for (auto it = lhs.getMeasures().begin(); it != lhs.getMeasures().end();it++){
-		if (!(rhs.getMeasure(it->first) == it->second)){
-			return false;
-		}
+	if (lhs.getMeasures() != rhs.getMeasures()){
+		return false;
 	}
-	for (auto it = lhs.getNames().begin(); it != lhs.getNames().end();it++){
-			if (rhs.getName(it->first) != it->second){
-				return false;
-			}
+	if (lhs.getNames() != rhs.getNames()){
+		return false;
 	}
 	return true;
 }

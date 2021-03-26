@@ -24,7 +24,7 @@
 #include <stdexcept>
 #include <tuple>
 #include <unordered_set>
-#include <map>
+#include <sstream>
 
 #include "lib_json.hpp"
 
@@ -75,17 +75,28 @@ Areas::Areas() {
     data.setArea(localAuthorityCode, area);
 */
 
-void Areas::setArea(std::string localAuthorityCode, Area area){
-
-	auto ar = areas.find(localAuthorityCode);
-	if (ar==areas.end()){
-		areas.insert({localAuthorityCode,area});
-	} else {
-		Area oldArea = ar->second;
-		for (auto it = area.getMeasures().begin(); it != area.getMeasures().end();it++){
+void Areas::setArea(std::string code, Area area){
+	auto ar = areas.find(code);
+	if (ar!=areas.end()){
+		//std::cout << "Replacing area\n";
+		Area& oldArea = ar->second;
+		std::map<std::string, Measure> measures = area.getMeasures();
+		for (auto it = measures.begin(); it != measures.end();it++){
 			oldArea.setMeasure(it->first,it->second);
 		}
+		std::map<std::string,std::string> names = area.getNames();
+		for (auto it2 = names.begin(); it2 != names.end();it2++){
+			oldArea.setName(it2->first,it2->second);
+		}
+	} else {
+		//std::cout<<"Making new area \n";
+		areas.insert({code,area});
 	}
+//	std::cout << code << " added with.. \n";
+//	std::map<std::string,std::string> names = area.getNames();
+//		for (auto it = names.begin(); it!= names.end();it++){
+//			std::cout << it->first << ":" << it->second << "\n";
+//		}
 }
 /*
   TODO: Areas::getArea(localAuthorityCode)
@@ -115,7 +126,7 @@ Area& Areas::getArea(std::string code) {
 	if (ar != this->areas.end()){
 		return ar->second;
 	} else {
-		throw std::out_of_range("This area isnt here " + code);
+		throw std::out_of_range("No area found matching " + code);
 	}
 }
 
@@ -196,8 +207,24 @@ void Areas::populateFromAuthorityCodeCSV(
     std::istream &is,
     const BethYw::SourceColumnMapping &cols,
     const StringFilterSet * const areasFilter) {
-  throw std::logic_error(
-    "Areas::populateFromAuthorityCodeCSV() has not been implemented!");
+	std::string line;
+	std::vector<std::string> data;
+
+	while(std::getline(is,line)){
+		std::stringstream lineStream(line);
+		while (std::getline(lineStream, line, ',')){
+			data.push_back(line);
+		}
+	}
+	std::string english = "eng";
+	std::string welsh = "cym";
+
+	for (int i = 3; i < ((int) data.size()-2); i+=3){
+		Area ar(data[i]);
+		ar.setName(english,data[i+1]);
+		ar.setName(welsh,data[i+2]);
+		this->setArea(data[i],ar);
+	}
 }
 
 /*
@@ -304,6 +331,59 @@ void Areas::populateFromAuthorityCodeCSV(
       &measuresFilter,
       &yearsFilter);
 */
+void Areas::populateFromWelshStatsJSON(std::istream &is,
+		const BethYw::SourceColumnMapping &cols,
+		const StringFilterSet * const areasFilter,
+		const StringFilterSet * const measuresFilter,
+		const YearFilterTuple * const yearsFilter){
+	json j;
+	is >> j;
+
+	for (auto& el : j["value"].items()) {
+	   auto &data = el.value();
+	   //gets all needed values from the JSON
+	   std::string localAuthorityCode = data["Localauthority_Code"];
+	   std::string localAuthorityName = data["Localauthority_ItemName_ENG"];
+	   std::string measureCode = data["Measure_Code"];
+	   std::string measureLabel = data["Measure_ItemName_ENG"];
+	   std::string year = data["Year_Code"];
+	   int yearInt = stoi(year);
+	   double measureData = data["Data"];
+
+
+	   if (!areasFilter->empty()){
+		   if(areasFilter->count(localAuthorityCode) <= 0){
+			   continue;
+		   }
+	   }
+
+	   Measure meas(measureCode, measureLabel);
+	   meas.setValue(yearInt, measureData);
+
+	   if (!measuresFilter->empty()){
+		   if(measuresFilter->count(meas.getCodename()) <= 0){
+			   continue;
+		   }
+	   }
+
+	   //retrieves values from the year tuple
+	   int year1 = std::get<0>(*yearsFilter);
+	   int year2 = std::get<1>(*yearsFilter);
+	   if(year1 != 0 && year2 != 0){
+		   if (yearInt < year1 || yearInt > year2){
+			   continue;
+		   }
+	   }
+	   auto it = areas.find(localAuthorityCode);
+	   if (it == areas.end()){
+		   Area ar(localAuthorityCode);
+		   setArea(localAuthorityCode,ar);
+	   }
+	   Area& ar = getArea(localAuthorityCode);
+	   ar.setName("eng",localAuthorityName);
+	   ar.setMeasure(measureCode,meas);
+	}
+}
 
 
 /*
