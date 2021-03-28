@@ -80,6 +80,13 @@ public:
       const StringFilterSet * const areas = nullptr)
       noexcept(false);
 
+  void populateFromAuthorityByYearCSV(
+		  std:: istream& is,
+		  const BethYw::SourceColumnMapping& cols,
+		  const StringFilterSet * const areasFilter = nullptr,
+		  const StringFilterSet * const measuresFilter = nullptr,
+		  const YearFilterTuple * yearFilter = nullptr)
+  	  	  noexcept(false);
   void populate(
       std::istream& is,
       const BethYw::SourceDataType& type,
@@ -96,14 +103,16 @@ public:
 
   void populateFromWelshStatsJSON(std::istream &is,
 		  const BethYw::SourceColumnMapping &cols,
-		  const StringFilterSet * const areasFilter,
-		  const StringFilterSet * const measuresFilter,
-		  const YearFilterTuple * const yearsFilter);
+		  const StringFilterSet * const areasFilter = nullptr,
+		  const StringFilterSet * const measuresFilter = nullptr,
+		  const YearFilterTuple * const yearsFilter = nullptr)
+  	  	  noexcept(false);
   std::string toJSON() const;
 
   void setArea(std::string code, Area area);
   Area& getArea(std::string localAuthorityCode);
+  AreasContainer getAreas();
   const int size() const noexcept;
 };
-
+std::ostream& operator<<(std::ostream os, Areas ars);
 #endif // AREAS_H

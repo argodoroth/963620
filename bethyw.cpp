@@ -45,6 +45,8 @@
     Exit code
 */
 int BethYw::run(int argc, char *argv[]) {
+  auto cols = InputFiles::COMPLETE_POPDEN.COLS;
+  std::cout << cols.at(BethYw::SINGLE_MEASURE_CODE);
   auto cxxopts = BethYw::cxxoptsSetup();
   auto args = cxxopts.parse(argc, argv);
 

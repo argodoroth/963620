@@ -48,5 +48,6 @@ public:
   const int namesSize() const noexcept;
 };
 bool operator==(Area lhs, Area rhs);
+std::ostream& operator<<(std::ostream, Area ar);
 
 #endif // AREA_H_

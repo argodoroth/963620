@@ -130,6 +130,9 @@ Area& Areas::getArea(std::string code) {
 	}
 }
 
+AreasContainer Areas::getAreas(){
+	return this->areas;
+}
 /*
   TODO: Areas::size()
 
@@ -207,23 +210,38 @@ void Areas::populateFromAuthorityCodeCSV(
     std::istream &is,
     const BethYw::SourceColumnMapping &cols,
     const StringFilterSet * const areasFilter) {
-	std::string line;
-	std::vector<std::string> data;
-
-	while(std::getline(is,line)){
-		std::stringstream lineStream(line);
-		while (std::getline(lineStream, line, ',')){
-			data.push_back(line);
-		}
-	}
 	std::string english = "eng";
 	std::string welsh = "cym";
 
-	for (int i = 3; i < ((int) data.size()-2); i+=3){
-		Area ar(data[i]);
-		ar.setName(english,data[i+1]);
-		ar.setName(welsh,data[i+2]);
-		this->setArea(data[i],ar);
+	std::string line;
+	std::vector<std::string> data;
+	std::getline(is,line);
+
+	while(std::getline(is,line)){
+		int i = 0;
+		std::string areaCode;
+		std::stringstream lineStream(line);
+		while (std::getline(lineStream, line, ',')){
+			if (i == 0) {
+				areaCode = line;
+				Area ar(line);
+				setArea(line,ar);
+			} else if (i == 1){
+				Area& ar = getArea(areaCode);
+				ar.setName(english,line);
+			} else if (i ==2){
+				Area& ar = getArea(areaCode);
+				ar.setName(welsh,line);
+			}
+			i++;
+		}
+	}
+	for (auto x = cols.begin(); x != cols.end(); x++){
+		if (x->first == BethYw::AUTH_CODE){
+			std::cout << "aha";
+		}
+		std::cout << cols.find(BethYw::AUTH_CODE)->second;
+		std::cout << x->first << " " << x->second << "\n";
 	}
 }
 
@@ -336,21 +354,22 @@ void Areas::populateFromWelshStatsJSON(std::istream &is,
 		const StringFilterSet * const areasFilter,
 		const StringFilterSet * const measuresFilter,
 		const YearFilterTuple * const yearsFilter){
+	//opens json stream
 	json j;
 	is >> j;
 
 	for (auto& el : j["value"].items()) {
 	   auto &data = el.value();
 	   //gets all needed values from the JSON
-	   std::string localAuthorityCode = data["Localauthority_Code"];
-	   std::string localAuthorityName = data["Localauthority_ItemName_ENG"];
-	   std::string measureCode = data["Measure_Code"];
-	   std::string measureLabel = data["Measure_ItemName_ENG"];
-	   std::string year = data["Year_Code"];
+	   std::string localAuthorityCode = data[cols.at(BethYw::AUTH_CODE)];
+	   std::string localAuthorityName = data[cols.at(BethYw::AUTH_NAME_ENG)];
+	   std::string measureCode = data[cols.at(BethYw::MEASURE_CODE)];
+	   std::string measureLabel = data[cols.at(BethYw::MEASURE_NAME)];
+	   std::string year = data[cols.at(BethYw::YEAR)];
 	   int yearInt = stoi(year);
-	   double measureData = data["Data"];
+	   double measureData = data[cols.at(BethYw::VALUE)];
 
-
+	   //Does not retrieve value if not in filters
 	   if (!areasFilter->empty()){
 		   if(areasFilter->count(localAuthorityCode) <= 0){
 			   continue;
@@ -374,6 +393,7 @@ void Areas::populateFromWelshStatsJSON(std::istream &is,
 			   continue;
 		   }
 	   }
+	   //If area doesn't exist creates a new one
 	   auto it = areas.find(localAuthorityCode);
 	   if (it == areas.end()){
 		   Area ar(localAuthorityCode);
@@ -452,7 +472,69 @@ void Areas::populateFromWelshStatsJSON(std::istream &is,
     std::out_of_range if there are not enough columns in cols
 */
 
+void Areas::populateFromAuthorityByYearCSV(
+		  std:: istream& is,
+		  const BethYw::SourceColumnMapping& cols,
+		  const StringFilterSet * const areasFilter,
+		  const StringFilterSet * const measuresFilter,
+		  const YearFilterTuple * yearFilter){
+	if (cols.count(BethYw::SINGLE_MEASURE_CODE) <= 0 || cols.count(BethYw::SINGLE_MEASURE_NAME) <= 0){
+		throw std::out_of_range("there are not enough columns in cols");
+	}
 
+	//Get values for assigning to measure
+	std::string line;
+	std::string measureCode = cols.at(BethYw::SINGLE_MEASURE_CODE);
+	std::string measureName = cols.at(BethYw::SINGLE_MEASURE_NAME);
+	std::vector<int> yearsColumns;
+
+	if (!measuresFilter->empty()){
+		if (measuresFilter->count(measureCode) <= 0){
+			return;
+		}
+	}
+
+	//iterate over lines
+	while(std::getline(is,line)){
+		int i = 0;
+		std::string areaCode;
+		std::stringstream lineStream(line);
+		Measure meas(measureCode,measureName);
+		bool addCurrentArea;
+
+		//populate years map
+		if (yearsColumns.empty()){
+			while (std::getline(lineStream, line, ',')){
+				if (i != 0){
+					yearsColumns.push_back(stoi(line));
+				}
+				i++;
+			}
+		}
+		//insert value for each year to measure
+		while (std::getline(lineStream, line, ',')){
+			if (i == 0){
+				if (!areasFilter->empty()){
+					if(areasFilter->count(line) <= 0){
+						addCurrentArea = false;
+						break;
+					}
+				}
+				areaCode = line;
+				addCurrentArea = true;
+			} else {
+				meas.setValue(yearsColumns.at(i-1),stod(line));
+			}
+			i++;
+		}
+
+		//only add after measure has been fully populated to save computation
+		if (addCurrentArea){
+			Area& ar = getArea(areaCode);
+			ar.setMeasure(measureCode,meas);
+		}
+	}
+}
 /*
   TODO: Areas::populate(is, type, cols)
 
@@ -510,7 +592,12 @@ void Areas::populate(std::istream &is,
                      const BethYw::SourceColumnMapping &cols) {
   if (type == BethYw::AuthorityCodeCSV) {
     populateFromAuthorityCodeCSV(is, cols);
-  } else {
+  } else if (type == BethYw::AuthorityByYearCSV){
+	populateFromAuthorityByYearCSV(is,cols);
+  }else if (type == BethYw::WelshStatsJSON){
+	populateFromWelshStatsJSON(is,cols);
+  }
+  else {
     throw std::runtime_error("Areas::populate: Unexpected data type");
   }
 }
@@ -607,6 +694,10 @@ void Areas::populate(
      {
   if (type == BethYw::AuthorityCodeCSV) {
     populateFromAuthorityCodeCSV(is, cols, areasFilter);
+  } else if (type == BethYw::AuthorityByYearCSV){
+	  populateFromAuthorityByYearCSV(is, cols, areasFilter, measuresFilter,yearsFilter);
+  } else if (type == BethYw::WelshStatsJSON){
+	  populateFromWelshStatsJSON(is, cols, areasFilter, measuresFilter,yearsFilter);
   } else {
     throw std::runtime_error("Areas::populate: Unexpected data type");
   }
@@ -797,5 +888,11 @@ std::string Areas::toJSON() const {
     Areas areas();
     std::cout << areas << std::end;
 */
-
+std::ostream& operator<<(std::ostream& os, Areas ars){
+	std::map<std::string,Area> areasToPrint = ars.getAreas();
+	for (auto it = areasToPrint.begin(); it != areasToPrint.end();it++){
+		//os << it->second;
+	}
+	return os;
+}
 

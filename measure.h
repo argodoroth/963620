@@ -16,6 +16,7 @@
 
 #include <string>
 #include <map>
+#include <iomanip>
 
 /*
   The Measure class contains a measure code, label, and a container for readings
@@ -45,4 +46,5 @@ public:
 };
 
 bool operator==(Measure lhs, Measure rhs);
+std::ostream& operator<<(std::ostream& os, Measure measure);
 #endif // MEASURE_H_

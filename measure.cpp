@@ -21,6 +21,8 @@
 #include <stdexcept>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 #include "measure.h"
 
@@ -181,10 +183,10 @@ const std::map<int,double> Measure::getValues() const {
     measure.setValue(1999, 12345678.9);
 */
 void Measure::setValue(int key, double value){
-//	auto it = this->values.find(key);
-//	if (it != this->values.end()){
-//		this->values.erase(it);
-//	}
+	auto it = this->values.find(key);
+	if (it != this->values.end()){
+		this->values.erase(it);
+	}
 	this->values.insert({key,value});
 }
 
@@ -314,7 +316,20 @@ const double Measure::getAverage() const noexcept{
     measure.setValue(1999, 12345678.9);
     std::cout << measure << std::end;
 */
-
+std::ostream& operator<<(std::ostream& os, Measure measure){
+	os << measure.getLabel() << "(" << measure.getCodename() << ")\n";
+	std::map<int,double> values = measure.getValues();
+	for (auto it = values.begin();it != values.end();it++){
+		os << std::setw(10) << it->first;
+	}
+	os << std::setw(13) << "Average" << std::setw(12) << "Diff." << std::setw(8) << "%Diff.";
+	os << "\n";
+	for (auto it = values.begin();it != values.end();it++){
+		os << std::setw(10) << it->second;
+	}
+	os << "\n";
+	return os;
+}
 
 /*
   TODO: operator==(lhs, rhs)

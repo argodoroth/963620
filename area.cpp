@@ -80,6 +80,16 @@ const std::string Area::getLocalAuthorityCode() const{
     auto name = area.getName(langCode);
 */
 const std::string Area::getName(std::string lang) const{
+	if (lang.length() != 3){
+			throw std::invalid_argument("Area::getName: Language code must be three alphabetical letters only");
+		}
+		for (size_t i =0; i<lang.length();i++){
+			if(isdigit(lang[i])){
+				throw std::invalid_argument("Area::getName: Language code must be three alphabetical letters only");
+			} else {
+				lang[i] = (char) tolower(lang[i]);
+			}
+		}
 	auto it = this->names.find(lang);
 
 	if (it != this->names.end()){
@@ -290,7 +300,19 @@ const int Area::namesSize() const noexcept{
     area.setName("eng", "Powys");
     std::cout << area << std::endl;
 */
-
+std::ostream& operator<<(std::ostream& os, Area ar){
+	os << ar.getName("eng") << " / " << ar.getName("cym") << " ("
+			<< ar.getLocalAuthorityCode() << ")\n";
+	if (ar.size() > 0){
+		std::map<std::string,Measure> measures = ar.getMeasures();
+		for (auto it = measures.begin(); it != measures.end();it++){
+			os << it->second;
+		}
+	}else {
+		os << "<no measures>\n";
+	}
+	return os;
+}
 
 /*
   TODO: operator==(lhs, rhs)
