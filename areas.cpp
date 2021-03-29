@@ -78,7 +78,7 @@ Areas::Areas() {
 void Areas::setArea(std::string code, Area area){
 	auto ar = areas.find(code);
 	if (ar!=areas.end()){
-		//std::cout << "Replacing area\n";
+
 		Area& oldArea = ar->second;
 		std::map<std::string, Measure> measures = area.getMeasures();
 		for (auto it = measures.begin(); it != measures.end();it++){
@@ -89,14 +89,8 @@ void Areas::setArea(std::string code, Area area){
 			oldArea.setName(it2->first,it2->second);
 		}
 	} else {
-		//std::cout<<"Making new area \n";
 		areas.insert({code,area});
 	}
-//	std::cout << code << " added with.. \n";
-//	std::map<std::string,std::string> names = area.getNames();
-//		for (auto it = names.begin(); it!= names.end();it++){
-//			std::cout << it->first << ":" << it->second << "\n";
-//		}
 }
 /*
   TODO: Areas::getArea(localAuthorityCode)
@@ -236,13 +230,6 @@ void Areas::populateFromAuthorityCodeCSV(
 			i++;
 		}
 	}
-	for (auto x = cols.begin(); x != cols.end(); x++){
-		if (x->first == BethYw::AUTH_CODE){
-			std::cout << "aha";
-		}
-		std::cout << cols.find(BethYw::AUTH_CODE)->second;
-		std::cout << x->first << " " << x->second << "\n";
-	}
 }
 
 /*
@@ -357,14 +344,21 @@ void Areas::populateFromWelshStatsJSON(std::istream &is,
 	//opens json stream
 	json j;
 	is >> j;
+	std::string measureCode;
+	std::string measureLabel;
+	if (cols.count(BethYw::SINGLE_MEASURE_CODE)>0){
+		 measureCode = cols.at(BethYw::MEASURE_CODE);
+		 measureLabel = cols.at(BethYw::MEASURE_NAME);
+	}
 
+		//gets all values from json
 	for (auto& el : j["value"].items()) {
 	   auto &data = el.value();
 	   //gets all needed values from the JSON
 	   std::string localAuthorityCode = data[cols.at(BethYw::AUTH_CODE)];
 	   std::string localAuthorityName = data[cols.at(BethYw::AUTH_NAME_ENG)];
-	   std::string measureCode = data[cols.at(BethYw::MEASURE_CODE)];
-	   std::string measureLabel = data[cols.at(BethYw::MEASURE_NAME)];
+	   measureCode = data[cols.at(BethYw::MEASURE_CODE)];
+	   measureLabel = data[cols.at(BethYw::MEASURE_NAME)];
 	   std::string year = data[cols.at(BethYw::YEAR)];
 	   int yearInt = stoi(year);
 	   double measureData = data[cols.at(BethYw::VALUE)];
@@ -393,6 +387,7 @@ void Areas::populateFromWelshStatsJSON(std::istream &is,
 			   continue;
 		   }
 	   }
+
 	   //If area doesn't exist creates a new one
 	   auto it = areas.find(localAuthorityCode);
 	   if (it == areas.end()){
@@ -592,10 +587,6 @@ void Areas::populate(std::istream &is,
                      const BethYw::SourceColumnMapping &cols) {
   if (type == BethYw::AuthorityCodeCSV) {
     populateFromAuthorityCodeCSV(is, cols);
-  } else if (type == BethYw::AuthorityByYearCSV){
-	populateFromAuthorityByYearCSV(is,cols);
-  }else if (type == BethYw::WelshStatsJSON){
-	populateFromWelshStatsJSON(is,cols);
   }
   else {
     throw std::runtime_error("Areas::populate: Unexpected data type");
@@ -891,7 +882,7 @@ std::string Areas::toJSON() const {
 std::ostream& operator<<(std::ostream& os, Areas ars){
 	std::map<std::string,Area> areasToPrint = ars.getAreas();
 	for (auto it = areasToPrint.begin(); it != areasToPrint.end();it++){
-		//os << it->second;
+		os << it->second;
 	}
 	return os;
 }

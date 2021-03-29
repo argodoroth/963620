@@ -45,8 +45,7 @@
     Exit code
 */
 int BethYw::run(int argc, char *argv[]) {
-  auto cols = InputFiles::COMPLETE_POPDEN.COLS;
-  std::cout << cols.at(BethYw::SINGLE_MEASURE_CODE);
+
   auto cxxopts = BethYw::cxxoptsSetup();
   auto args = cxxopts.parse(argc, argv);
 
@@ -67,21 +66,21 @@ int BethYw::run(int argc, char *argv[]) {
 
   Areas data = Areas();
 
-  // BethYw::loadAreas(data, dir, areasFilter);
-  //
-  // BethYw::loadDatasets(data,
-  //                      dir,
-  //                      datasetsToImport,
-  //                      areasFilter,
-  //                      measuresFilter,
-  //                      yearsFilter);
+   BethYw::loadAreas(data, dir, areasFilter);
+
+   BethYw::loadDatasets(data,
+                        dir,
+                        datasetsToImport,
+                        areasFilter,
+                        measuresFilter,
+                        yearsFilter);
 
   if (args.count("json")) {
     // The output as JSON
-    std::cout << data.toJSON() << std::endl;
+    //std::cout << data.toJSON() << std::endl;
   } else {
     // The output as tables
-    // std::cout << data << std::endl;
+     std::cout << data << std::endl;
   }
 
   return 0;
@@ -182,7 +181,14 @@ std::vector<BethYw::InputFileSource> BethYw::parseDatasetsArg(
 
   // Note that this function will throw an exception if datasets is not set as 
   // an argument. Check the documentation! Read it and understand it.
-  auto inputDatasets = args["datasets"].as<std::vector<std::string>>();
+
+  //Checcks if the datasets argument exists
+  std::vector<std::string> inputDatasets;
+  if (args["datasets"].count()>0){
+	  inputDatasets = args["datasets"].as<std::vector<std::string>>();
+  } else {
+	  inputDatasets.push_back("all");
+  }
 
   //turns values into integers to iterate over
   int numDatasetsInt = static_cast<int>(numDatasets);
@@ -253,12 +259,17 @@ std::unordered_set<std::string> BethYw::parseAreasArg(
   std::unordered_set<std::string> areas;
 
   // Retrieve the areas argument like so:
-  auto temp = args["areas"].as<std::vector<std::string>>();
+  std::vector<std::string> inputAreas;
+    if (args["areas"].count()>0){
+  	  inputAreas = args["areas"].as<std::vector<std::string>>();
+    } else {
+  	  return areas;
+    }
 
-  int numInputs = static_cast<int>(temp.size());
+  int numInputs = static_cast<int>(inputAreas.size());
   for (int i = 0; i<numInputs; i++){
-	  if (temp[i] != "all"){
-		  areas.insert(temp[i]);
+	  if (inputAreas[i] != "all"){
+		  areas.insert(inputAreas[i]);
 	  } else {
 		  areas.clear();
 		  break;
@@ -300,12 +311,17 @@ std::unordered_set<std::string> BethYw::parseMeasuresArg(
   std::unordered_set<std::string> measures;
 
   // Retrieve the areas argument like so:
-  auto temp = args["measures"].as<std::vector<std::string>>();
+  std::vector<std::string> inputMeasures;
+  if (args["measures"].count()>0){
+	  inputMeasures = args["measures"].as<std::vector<std::string>>();
+  } else {
+	  return measures;
+  }
 
-  int numInputs = static_cast<int>(temp.size());
+  int numInputs = static_cast<int>(inputMeasures.size());
   for (int i = 0; i<numInputs; i++){
-	  if (temp[i] != "all"){
-		  measures.insert(temp[i]);
+	  if (inputMeasures[i] != "all"){
+		  measures.insert(inputMeasures[i]);
 	  } else {
 		  measures.clear();
 		  break;
@@ -342,23 +358,28 @@ std::unordered_set<std::string> BethYw::parseMeasuresArg(
 std::tuple<unsigned int, unsigned int>  BethYw::parseYearsArg(
 	    cxxopts::ParseResult& args) {
 	std::tuple<unsigned int, unsigned int> years;
+	std::string inputYears = args["years"].as<std::string>();
 
-	auto temp = args["years"].as<std::string>();
-	std::size_t split = temp.find("-");
+	if (args["years"].count()>0){
+		  inputYears = args["years"].as<std::string>();
+	  } else {
+		  return std::make_tuple(0,0);
+	  }
+	std::size_t split = inputYears.find("-");
 
 	//checks values in years to see if digits
-	for (std::size_t i = 0; i<temp.size(); i++){
-		if (!isdigit(temp[i]) && i != split){
+	for (std::size_t i = 0; i<inputYears.size(); i++){
+		if (!isdigit(inputYears[i]) && i != split){
 			throw std::invalid_argument("Invalid input for years argument");
 		}
 	}
 
 	//checks to see if there is a hyphen in the values
-	if (split==std::string::npos && temp.size() <= 4){
-		years = std::make_tuple(std::stoi(temp),std::stoi(temp));
-	} else if (temp.size() <= 9){
-		std::string year1 = temp.substr(0,split);
-		std::string year2 = temp.substr(split + 1, temp.length());
+	if (split==std::string::npos && inputYears.size() <= 4){
+		years = std::make_tuple(std::stoi(inputYears),std::stoi(inputYears));
+	} else if (inputYears.size() <= 9){
+		std::string year1 = inputYears.substr(0,split);
+		std::string year2 = inputYears.substr(split + 1, inputYears.length());
 		years = std::make_tuple(std::stoi(year1),std::stoi(year2));
 	} else {
 		throw std::invalid_argument("Invalid input for years argument");
@@ -402,7 +423,13 @@ std::tuple<unsigned int, unsigned int>  BethYw::parseYearsArg(
     BethYw::loadAreas(areas, "data", BethYw::parseAreasArg(args));
 */
 
-
+void BethYw::loadAreas(Areas& areas, std::string dir,  StringFilterSet areasFilter){
+	std::string filename = InputFiles::AREAS.FILE;
+	InputFile input(dir + filename);
+	std::istream &stream = input.open();
+	auto cols = InputFiles::AREAS.COLS;
+	areas.populate(stream,BethYw::SourceDataType::AuthorityCodeCSV,cols); // @suppress("Ambiguous problem")
+}
 /*
   TODO: BethYw::loadDatasets(areas,
                              dir,
@@ -457,6 +484,22 @@ std::tuple<unsigned int, unsigned int>  BethYw::parseYearsArg(
       BethYw::parseMeasuresArg(args),
       BethYw::parseYearsArg(args));
 */
-
+void BethYw::loadDatasets(Areas& areas, std::string dir,
+		std::vector<BethYw::InputFileSource> datasetsToImport,
+		StringFilterSet areasFilter,
+		StringFilterSet  measuresFilter,
+		YearFilterTuple yearsFilter){
+	std::cout << "BethYw::loadDatasets entered \n";
+	for (auto it = datasetsToImport.begin(); it != datasetsToImport.end();it++){
+		std::string filename = it->FILE;
+		SourceDataType type = it->PARSER;
+		auto cols = it->COLS;
+		std::cout << dir << filename << ": Attempting open\n";
+		InputFile input(dir + filename);
+		std::istream &stream = input.open();
+		std::cout << dir << filename << ": Opened! \n";
+		areas.populate(stream,type,cols,&areasFilter,&measuresFilter,&yearsFilter);
+	}
+}
 
 

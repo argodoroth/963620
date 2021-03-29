@@ -320,12 +320,12 @@ std::ostream& operator<<(std::ostream& os, Measure measure){
 	os << measure.getLabel() << "(" << measure.getCodename() << ")\n";
 	std::map<int,double> values = measure.getValues();
 	for (auto it = values.begin();it != values.end();it++){
-		os << std::setw(10) << it->first;
+		os << std::setw(10) << it->first; // @suppress("Function cannot be resolved")
 	}
-	os << std::setw(13) << "Average" << std::setw(12) << "Diff." << std::setw(8) << "%Diff.";
+	os << std::setw(13) << "Average" << std::setw(12) << "Diff." << std::setw(8) << "%Diff.";// @suppress("Function cannot be resolved")
 	os << "\n";
 	for (auto it = values.begin();it != values.end();it++){
-		os << std::setw(10) << it->second;
+		os << std::setw(10) << it->second;// @suppress("Function cannot be resolved")
 	}
 	os << "\n";
 	return os;

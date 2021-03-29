@@ -96,9 +96,9 @@ public:
       std::istream& is,
       const BethYw::SourceDataType& type,
       const BethYw::SourceColumnMapping& cols,
-      const StringFilterSet * const areasFilter = nullptr,
-      const StringFilterSet * const measuresFilter = nullptr,
-      const YearFilterTuple * const yearsFilter = nullptr)
+      const StringFilterSet * const areasFilter,
+      const StringFilterSet * const measuresFilter,
+      const YearFilterTuple * const yearsFilter)
       noexcept(false);
 
   void populateFromWelshStatsJSON(std::istream &is,
@@ -114,5 +114,5 @@ public:
   AreasContainer getAreas();
   const int size() const noexcept;
 };
-std::ostream& operator<<(std::ostream os, Areas ars);
+std::ostream& operator<<(std::ostream& os, Areas ars);
 #endif // AREAS_H
